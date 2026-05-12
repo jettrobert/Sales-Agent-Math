@@ -1,11 +1,32 @@
-\documentclass[11pt]{article}
+\documentclass[12pt]{article}
 
 \usepackage{amsmath, amssymb, amsthm}
 \usepackage{geometry}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{titling}
 
-\geometry{margin=1in}
+\geometry{margin=1.15in}
+\linespread{1.08}
+\emergencystretch=2em
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.65em plus 0.15em minus 0.05em}
+\setlength{\abovedisplayskip}{0.85em}
+\setlength{\belowdisplayskip}{0.85em}
+\setlist[itemize]{leftmargin=1.4em, topsep=0.35em, itemsep=0.22em, parsep=0pt}
+\titleformat{\section}{\large\bfseries}{\thesection}{0.75em}{}
+\titlespacing*{\section}{0pt}{1.9em plus 0.4em minus 0.2em}{0.75em}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.75em}{}
+\titlespacing*{\subsection}{0pt}{1.25em plus 0.25em minus 0.1em}{0.35em}
+\setlength{\droptitle}{-2em}
+\pretitle{\begin{center}\Large\bfseries}
+\posttitle{\par\end{center}\vspace{0.25em}}
+\preauthor{}
+\postauthor{}
+\predate{}
+\postdate{}
 
 \title{Revenue Per Token: A Mathematical Framework for AI Sales Agents}
 \author{}
@@ -45,7 +66,7 @@ fall and model options multiply, the more important question becomes economic:
 This question matters because the cost of an agent is not just the price of a
 single model call. It includes:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item tokens spent reasoning, researching, and generating,
     \item tool calls to enrichment providers, CRMs, inboxes, and web scrapers,
     \item channel costs such as email volume, LinkedIn actions, or calling,
@@ -70,7 +91,7 @@ then chooses what to do next.
 
 Examples of possible actions include:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item research a company,
     \item enrich a contact,
     \item infer whether the contact is still at the company,
@@ -109,7 +130,7 @@ Let \(s_t\) denote the agent's observed state at time \(t\).
 The subscript \(t\) means ``at step \(t\).'' The state \(s_t\) contains whatever
 the agent currently knows, such as:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item account firmographics,
     \item contact title,
     \item prior messages,
@@ -158,7 +179,7 @@ For example, \(\mathcal{A}\) might include:
 
 Let \(R\) denote commercial return. Depending on the use case, \(R\) could mean:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item reply generated,
     \item meeting booked,
     \item qualified opportunity created,
@@ -263,7 +284,7 @@ Read in plain English:
 
 The notation means:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item \(a_t^*\): the best action at time \(t\),
     \item \(\mathcal{A}\): the set of available actions,
     \item \(s_t\): what the agent currently observes,
@@ -291,7 +312,7 @@ A simple ratio is:
 
 where:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item \(S\) is the full observed context,
     \item \(A = (a_1, a_2, \ldots, a_T)\) is a sequence of actions,
     \item \(C_{\text{tokens}}(A)\) is the token cost of that sequence.
@@ -402,7 +423,7 @@ s_t = (x_t, h_t, m_t)
 
 where:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item \(x_t\) is the current external context, such as CRM data, enrichment
     data, account signals, and channel status,
     \item \(h_t\) is the session history, such as previous actions, generated
@@ -464,7 +485,7 @@ without forcing every prior token to remain in the active context window.
 
 In an ideal system, the agent uses:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item active context for immediately relevant session details,
     \item summarized memory for durable conclusions,
     \item retrieval for account-specific and playbook-specific knowledge,
@@ -551,7 +572,7 @@ Not every token is used to persuade. Some tokens are used to reduce uncertainty.
 
 For example, an agent might spend tokens to answer:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item Is this person still at the company?
     \item Is this account in our ICP?
     \item Is there a recent buying signal?
@@ -669,7 +690,7 @@ The proposed research question is:
 
 Supporting questions include:
 
-\begin{itemize}[noitemsep]
+\begin{itemize}
     \item How should agent builders estimate the expected value of the next
     action?
     \item When is it worth spending more inference to reduce uncertainty?
