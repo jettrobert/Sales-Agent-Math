@@ -7,7 +7,7 @@
 
 \geometry{margin=1in}
 
-\title{From Next-Token Prediction to Next-Best Commercial Action}
+\title{Revenue Per Token: A Mathematical Framework for AI Sales Agents}
 \author{}
 \date{}
 
@@ -15,57 +15,261 @@
 
 \maketitle
 
-\section{Core Question}
+\begin{abstract}
+AI sales agents are usually discussed as language systems: they write emails,
+summarize accounts, personalize messages, and respond to prospects. This paper
+proposes a different starting point. AI sales agents should be understood as
+economic decision systems that spend inference, data, channel access, and brand
+risk in pursuit of commercial outcomes. As model inference costs diverge across
+providers, and as cheaper models make high-volume agentic behavior possible,
+builders need a shared framework for reasoning about when an agent should think,
+research, write, wait, switch models, or stop. The central question is not only
+whether an agent can generate plausible text. It is whether the agent can choose
+the next commercially valuable action under uncertainty.
+\end{abstract}
 
-Can AI sales agents be modeled as systems that optimize expected revenue per token, and what mathematical frameworks best describe the limits of that optimization?
+\section{Motivation}
 
-More informally:
+The first generation of AI sales tooling focused on generation quality. Could a
+model write a convincing email? Could it personalize a first line? Could it
+summarize a company website?
+
+Those questions still matter, but they are no longer enough. As inference costs
+fall and model options multiply, the more important question becomes economic:
 
 \begin{quote}
-    Is the central problem of AI sales agents not merely generating plausible language, but deciding which information to acquire, which action to take, and when to stop?
+    How should an AI sales agent allocate computation, tokens, tools, and
+    outreach attempts in order to maximize expected commercial value?
 \end{quote}
 
-\section{Sales Agents as Sequential Decision Systems}
-
-Let an AI sales agent take a sequence of actions:
-
-\[
-A = (a_1, a_2, \ldots, a_T)
-\]
-
-where each action may include:
+This question matters because the cost of an agent is not just the price of a
+single model call. It includes:
 
 \begin{itemize}[noitemsep]
-    \item researching a prospect,
-    \item choosing a channel,
-    \item generating an email,
-    \item personalizing a message,
-    \item asking a qualification question,
-    \item waiting,
-    \item following up,
-    \item stopping outreach.
+    \item tokens spent reasoning, researching, and generating,
+    \item tool calls to enrichment providers, CRMs, inboxes, and web scrapers,
+    \item channel costs such as email volume, LinkedIn actions, or calling,
+    \item deliverability risk,
+    \item brand risk,
+    \item human review time,
+    \item opportunity cost from contacting the wrong person at the wrong time.
 \end{itemize}
 
-At each timestep \(t\), the agent observes a state \(s_t\), chooses an action \(a_t\), and receives feedback that may be immediate, delayed, or unobserved.
+At the same time, sales outcomes are uncertain. A prospect may reply because of
+message quality, timing, budget, trust, urgency, internal politics, inbox
+placement, or a hidden need the agent cannot observe directly.
 
-The agent's objective is to choose actions that maximize expected commercial value.
+This creates a mixed mathematical problem: part economic optimization, part
+probabilistic inference, part sequential decision-making.
 
-\[
-a_t^* = \arg\max_{a_t} \mathbb{E}[R \mid s_t, a_t] - C(a_t)
-\]
+\section{The Basic Idea}
 
-where:
+An AI sales agent can be modeled as a system that repeatedly chooses actions.
+At any moment, it has some information about a prospect, account, or market. It
+then chooses what to do next.
+
+Examples of possible actions include:
 
 \begin{itemize}[noitemsep]
-    \item \(R\) is eventual commercial return,
-    \item \(s_t\) is the current observed sales context,
-    \item \(a_t\) is the next action,
-    \item \(C(a_t)\) is the cost of taking that action.
+    \item research a company,
+    \item enrich a contact,
+    \item infer whether the contact is still at the company,
+    \item choose a message angle,
+    \item generate an email,
+    \item ask a clarifying question,
+    \item send a follow-up,
+    \item wait,
+    \item route the lead to a human,
+    \item stop outreach.
 \end{itemize}
+
+Each action has a cost. Each action may also change the probability of a future
+commercial outcome.
+
+The goal is to compare possible actions before taking them.
+
+\[
+\text{Value of action}
+=
+\text{expected commercial benefit}
+-
+\text{expected cost}
+\]
+
+This simple equation is the foundation of the framework.
+
+\section{A Short Mathematical Primer}
+
+This section introduces the minimal notation needed to describe the problem.
+
+\subsection{State}
+
+Let \(s_t\) denote the agent's observed state at time \(t\).
+
+The subscript \(t\) means ``at step \(t\).'' The state \(s_t\) contains whatever
+the agent currently knows, such as:
+
+\begin{itemize}[noitemsep]
+    \item account firmographics,
+    \item contact title,
+    \item prior messages,
+    \item CRM stage,
+    \item website visits,
+    \item enrichment results,
+    \item inferred buyer fit,
+    \item deliverability status.
+\end{itemize}
+
+The state is observed but incomplete. The agent does not directly know whether
+the prospect has budget, urgency, trust, or current attention.
+
+\subsection{Action}
+
+Let \(a_t\) denote the action the agent chooses at time \(t\).
+
+The set of all available actions is written as:
+
+\[
+\mathcal{A}
+\]
+
+For example, \(\mathcal{A}\) might include:
+
+\[
+\mathcal{A}
+=
+\{
+\text{research},
+\text{enrich},
+\text{write},
+\text{send},
+\text{wait},
+\text{stop}
+\}
+\]
+
+\subsection{Reward}
+
+Let \(R\) denote commercial return. Depending on the use case, \(R\) could mean:
+
+\begin{itemize}[noitemsep]
+    \item reply generated,
+    \item meeting booked,
+    \item qualified opportunity created,
+    \item closed-won revenue,
+    \item expected lifetime value.
+\end{itemize}
+
+In early-stage systems, \(R\) may be a proxy reward such as reply rate. In mature
+systems, it should move closer to revenue or contribution margin.
+
+\subsection{Cost}
+
+Let \(C(a_t)\) denote the cost of action \(a_t\).
+
+This cost can include token cost, model cost, tool cost, channel cost, and risk:
+
+\[
+C(a_t)
+=
+C_{\text{tokens}}(a_t)
++
+C_{\text{tools}}(a_t)
++
+C_{\text{channel}}(a_t)
++
+C_{\text{risk}}(a_t)
+\]
+
+The term \(C_{\text{risk}}\) is important. Sales agents can create negative value
+even when direct inference cost is cheap. Bad outreach can damage deliverability,
+burn accounts, annoy prospects, or create brand risk.
+
+\subsection{Expectation}
+
+The symbol \(\mathbb{E}[\cdot]\) means expected value.
+
+Expected value is a probability-weighted average of possible outcomes. If an
+action has a \(10\%\) chance of producing a \(\$10{,}000\) opportunity, its gross
+expected value is:
+
+\[
+0.10 \times 10{,}000 = 1{,}000
+\]
+
+In sales, the agent rarely knows what will happen. It must act based on expected
+value rather than certainty.
+
+\subsection{Argmax}
+
+The notation \(\arg\max\) means ``choose the input that makes the expression as
+large as possible.''
+
+If the agent is choosing between possible actions, then:
+
+\[
+\arg\max_{a \in \mathcal{A}} f(a)
+\]
+
+means:
+
+\begin{quote}
+    Choose the action \(a\), from the available action set \(\mathcal{A}\), that
+    gives the largest value of \(f(a)\).
+\end{quote}
+
+This notation is useful because agent design is often a choice problem: the
+system must decide which action to take next.
+
+\section{Expected Commercial Value}
+
+We can now define the agent's next-action problem.
+
+At time \(t\), the agent observes state \(s_t\). It then chooses an action
+\(a_t\) from the available action set \(\mathcal{A}\).
+
+The best next action is:
+
+\[
+a_t^*
+=
+\arg\max_{a_t \in \mathcal{A}}
+\left(
+\mathbb{E}[R \mid s_t, a_t]
+-
+C(a_t)
+\right)
+\]
+
+Read in plain English:
+
+\begin{quote}
+    The optimal next action \(a_t^*\) is the action, among all available actions,
+    that maximizes expected commercial return given the current state and the
+    chosen action, minus the cost of that action.
+\end{quote}
+
+The notation means:
+
+\begin{itemize}[noitemsep]
+    \item \(a_t^*\): the best action at time \(t\),
+    \item \(\mathcal{A}\): the set of available actions,
+    \item \(s_t\): what the agent currently observes,
+    \item \(a_t\): a candidate next action,
+    \item \(R\): commercial return,
+    \item \(\mathbb{E}[R \mid s_t, a_t]\): expected return after taking action
+    \(a_t\) in state \(s_t\),
+    \item \(C(a_t)\): total cost of taking action \(a_t\).
+\end{itemize}
+
+This is the core equation of the framework.
 
 \section{Revenue Per Token}
 
-A simple version of the agent's objective is:
+The phrase ``revenue per token'' is a shorthand for the economics of inference.
+It asks how much commercial value is created by the computation an agent spends.
+
+A simple ratio is:
 
 \[
 \text{Revenue Per Token}
@@ -73,7 +277,16 @@ A simple version of the agent's objective is:
 \frac{\mathbb{E}[R \mid S, A]}{C_{\text{tokens}}(A)}
 \]
 
-A more complete version accounts for non-token costs:
+where:
+
+\begin{itemize}[noitemsep]
+    \item \(S\) is the full observed context,
+    \item \(A = (a_1, a_2, \ldots, a_T)\) is a sequence of actions,
+    \item \(C_{\text{tokens}}(A)\) is the token cost of that sequence.
+\end{itemize}
+
+However, this ratio is incomplete because cheap tokens can still produce costly
+bad actions. A better objective is net commercial value:
 
 \[
 \text{Net Value}(A)
@@ -92,37 +305,80 @@ C_{\text{tools}}
 +
 C_{\text{channel}}
 +
-C_{\text{brand}}
+C_{\text{risk}}
 +
-C_{\text{opportunity}}
+C_{\text{human review}}
 \]
 
-The agent should therefore optimize not merely for likely next tokens, but for valuable next actions.
+This distinction matters as model costs diverge. If one model is much cheaper
+than another, the agent may use the cheaper model for high-volume classification,
+deduplication, or first-pass research, while reserving more expensive models for
+high-stakes reasoning, final message generation, or exception handling.
 
-\section{Expected Commercial Value}
+The economic question becomes:
 
-A simplified expected value model for a sales action is:
+\begin{quote}
+    Which model, tool, and action should the agent use at each step to maximize
+    expected net value?
+\end{quote}
+
+\section{Discrete Sequences of Action}
+
+Sales agents do not act once. They act over time.
+
+Let a full agent path be:
 
 \[
-EV(a_t \mid s_t)
-=
-P(y = 1 \mid s_t, a_t) \cdot LTV
--
-C(a_t)
--
-\text{Risk}(a_t)
+A = (a_1, a_2, \ldots, a_T)
 \]
 
-where:
+where \(T\) is the number of steps in the sequence.
 
-\begin{itemize}[noitemsep]
-    \item \(y = 1\) indicates a successful commercial outcome,
-    \item \(LTV\) is the lifetime value or expected contract value,
-    \item \(C(a_t)\) is the direct cost of the action,
-    \item \(\text{Risk}(a_t)\) includes deliverability, unsubscribe, spam, or brand risk.
-\end{itemize}
+For example:
 
-For a staged funnel, expected revenue may be decomposed as:
+\[
+A =
+(
+\text{research},
+\text{enrich},
+\text{write},
+\text{send},
+\text{wait},
+\text{follow up},
+\text{stop}
+)
+\]
+
+The agent's goal is not only to choose the best single action, but to choose a
+sequence of actions that produces the highest expected net value:
+
+\[
+A^*
+=
+\arg\max_{A}
+\left(
+\mathbb{E}[R \mid S, A]
+-
+C(A)
+\right)
+\]
+
+Read plainly:
+
+\begin{quote}
+    The optimal action sequence \(A^*\) is the sequence that maximizes expected
+    return given the starting context, minus the total cost of the sequence.
+\end{quote}
+
+This is where the problem becomes difficult. The agent must decide not only what
+to say, but whether to spend more tokens researching, whether to use a stronger
+model, whether the account is worth contacting, whether more information would
+change the decision, and whether the safest action is to stop.
+
+\section{A Funnel-Based Approximation}
+
+In practice, builders may not be able to estimate closed-won revenue directly.
+A simple approximation decomposes expected revenue into funnel probabilities:
 
 \[
 \mathbb{E}[R]
@@ -136,7 +392,17 @@ P(\text{close} \mid \text{meeting})
 ACV
 \]
 
-Thus the net expected value is:
+where \(ACV\) is annual contract value.
+
+This equation says:
+
+\begin{quote}
+    Expected revenue equals the probability of reply, multiplied by the
+    probability of meeting given reply, multiplied by the probability of close
+    given meeting, multiplied by contract value.
+\end{quote}
+
+Then expected net value becomes:
 
 \[
 EV
@@ -152,102 +418,26 @@ ACV
 C(A)
 \]
 
-\section{The P vs NP Analogy}
+This approximation is useful because it lets builders ask which part of the
+system an agent is actually improving. An agent may increase reply rate while
+decreasing meeting quality. Or it may reduce human review cost while increasing
+brand risk. A serious framework must account for the whole value chain.
 
-The P vs NP analogy arises from the distinction between finding and verifying a successful sales path.
+\section{Information Has Value}
 
-Suppose there exists an optimal sequence of commercial actions:
+Not every token is used to persuade. Some tokens are used to reduce uncertainty.
 
-\[
-A^* = (a_1^*, a_2^*, \ldots, a_T^*)
-\]
-
-After a deal closes, one may be able to verify that a given path contributed to the outcome. However, finding that path in advance is substantially harder.
-
-This suggests the informal analogy:
-
-\begin{quote}
-    Given a sales path, verification may be easier than generation. But efficiently discovering the optimal path before the outcome is observed may be computationally intractable.
-\end{quote}
-
-However, AI sales agents are not literally a P vs NP problem in the formal computational-complexity sense. Sales outcomes are probabilistic, partially observed, non-stationary, and reflexive.
-
-A stronger formulation is:
-
-\begin{quote}
-    AI sales agents resemble partially observable sequential decision systems in which the agent must optimize expected commercial value under uncertainty, sparse feedback, and costly inference.
-\end{quote}
-
-\section{Candidate Mathematical Frameworks}
-
-\subsection{Contextual Multi-Armed Bandits}
-
-A contextual bandit model is appropriate when the agent chooses among competing actions and observes partial reward.
-
-\[
-a_t^* = \arg\max_{a \in \mathcal{A}} \mathbb{E}[r_t \mid x_t, a]
-\]
-
-where:
+For example, an agent might spend tokens to answer:
 
 \begin{itemize}[noitemsep]
-    \item \(x_t\) is the context,
-    \item \(a\) is an available action,
-    \item \(r_t\) is the observed reward.
+    \item Is this person still at the company?
+    \item Is this account in our ICP?
+    \item Is there a recent buying signal?
+    \item Which pain point is most likely relevant?
+    \item Should this go to sales, support, or customer success?
 \end{itemize}
 
-This framework fits problems such as subject line selection, message angle testing, CTA choice, channel selection, and timing optimization.
-
-\subsection{Partially Observable Markov Decision Processes}
-
-A more expressive model is a partially observable Markov decision process, or POMDP.
-
-The buyer has a hidden state:
-
-\[
-z_t \in \mathcal{Z}
-\]
-
-which may include:
-
-\[
-z_t =
-(\text{awareness}, \text{need}, \text{urgency}, \text{budget}, \text{trust}, \text{authority}, \text{timing}, \text{annoyance})
-\]
-
-The agent cannot observe \(z_t\) directly. Instead, it observes signals:
-
-\[
-o_t \sim P(o_t \mid z_t)
-\]
-
-and maintains a belief distribution:
-
-\[
-b_t(z) = P(z_t = z \mid o_{1:t}, a_{1:t-1})
-\]
-
-The agent chooses the action that maximizes expected future reward:
-
-\[
-a_t^*
-=
-\arg\max_{a_t}
-\mathbb{E}
-\left[
-\sum_{k=t}^{T} \gamma^{k-t} r_k
-\mid
-b_t, a_t
-\right]
-\]
-
-where \(\gamma\) is a discount factor.
-
-\subsection{Value of Information}
-
-Some tokens persuade. Other tokens gather information.
-
-The value of asking a question, performing research, or enriching a record can be modeled as the value of information:
+The value of acquiring information can be written as:
 
 \[
 VOI
@@ -259,64 +449,124 @@ VOI
 C_{\text{info}}
 \]
 
-This captures the idea that a token may be valuable not because it directly converts the buyer, but because it reduces uncertainty about the buyer's state.
+where \(VOI\) means value of information.
 
-\section{Central Tension}
+Plainly:
 
-Sales combines objective and subjective components.
+\begin{quote}
+    Information is worth acquiring when the expected improvement in future
+    decisions is greater than the cost of acquiring it.
+\end{quote}
 
-Objective components include:
+This is a crucial distinction for AI sales agents. The agent is not merely
+generating text. It is spending inference to improve its own decision quality.
 
-\begin{itemize}[noitemsep]
-    \item inbox placement,
-    \item contact data accuracy,
-    \item company fit,
-    \item title relevance,
-    \item timing signals,
-    \item channel constraints.
-\end{itemize}
+\section{A P vs NP Analogy}
 
-Subjective components include:
+The P vs NP framing is useful as an analogy, but not as a literal claim.
 
-\begin{itemize}[noitemsep]
-    \item trust,
-    \item relevance,
-    \item emotional resonance,
-    \item perceived urgency,
-    \item prior experience,
-    \item mood and attention.
-\end{itemize}
-
-This creates a mixed optimization problem:
+In sales, once a deal is won, it may be easier to explain why a path worked:
 
 \[
-\text{Sales Outcome}
-=
-f(\text{objective constraints}, \text{subjective interpretation}, \text{agent action}, \epsilon)
+A = (a_1, a_2, \ldots, a_T)
 \]
 
-where \(\epsilon\) captures irreducible uncertainty.
+The prospect had a relevant pain point. The timing was right. The message reached
+the correct person. The offer matched a current internal priority.
+
+But finding that path in advance is much harder.
+
+This suggests an informal analogy:
+
+\begin{quote}
+    Verifying a successful sales path after the fact may be easier than
+    discovering the optimal path before the outcome is known.
+\end{quote}
+
+The analogy has limits. Sales is not a deterministic computational-complexity
+problem. Buyers are partially observed, probabilistic, non-stationary, and
+responsive to the agent's own actions.
+
+A more precise framing is:
+
+\begin{quote}
+    AI sales agents are partially observable sequential decision systems that
+    optimize expected commercial value under uncertainty, sparse feedback, and
+    costly inference.
+\end{quote}
+
+\section{Implications for Agent Builders}
+
+This framework suggests several practical design principles.
+
+\subsection{Optimize Actions, Not Tokens}
+
+The next token is only locally meaningful. The next commercial action is the real
+unit of agent design.
+
+\subsection{Separate Cheap Inference from Expensive Judgment}
+
+As model costs diverge, builders should route different tasks to different model
+classes. Cheap models may be sufficient for extraction, scoring, deduplication,
+and low-risk classification. Expensive models may be justified for strategic
+reasoning, nuanced personalization, exception handling, or final approval.
+
+\subsection{Track Total Cost, Not Only Model Cost}
+
+A low-cost model can still create high-cost behavior if it sends poor messages,
+misroutes accounts, damages deliverability, or increases human cleanup work.
+
+\subsection{Measure Downstream Value}
+
+Reply rate is not enough. The system should be evaluated by its effect on the
+full chain of commercial outcomes: reply quality, meeting quality, opportunity
+creation, close probability, ACV, retention, and brand safety.
+
+\subsection{Know When to Stop}
+
+Stopping is an action. A mature AI sales agent should recognize when additional
+tokens, research, or outreach are unlikely to produce positive expected value.
+
+\section{Research Question}
+
+The proposed research question is:
+
+\begin{quote}
+    Can AI sales agents be modeled as economic inference systems that allocate
+    tokens, models, tools, and channel actions to maximize expected net
+    commercial value?
+\end{quote}
+
+Supporting questions include:
+
+\begin{itemize}[noitemsep]
+    \item How should agent builders estimate the expected value of the next
+    action?
+    \item When is it worth spending more inference to reduce uncertainty?
+    \item How should agents route tasks across cheap and expensive models?
+    \item Which costs belong in the objective function beyond token spend?
+    \item How should systems measure downstream value rather than shallow
+    activity metrics?
+    \item What parts of the sales process are optimizable, approximable, or
+    irreducibly uncertain?
+\end{itemize}
 
 \section{Thesis}
 
-AI sales agents should not be evaluated primarily as copy generators. They should be evaluated as inference systems that allocate tokens, actions, and channel touches to maximize expected revenue under uncertainty.
+AI sales agents should not be evaluated primarily as copy generators. They should
+be evaluated as economic inference systems.
 
-The central mathematical problem is not:
+The central question is not:
 
 \begin{quote}
     What is the most plausible next token?
 \end{quote}
 
-but rather:
+It is:
 
 \begin{quote}
-    What is the most valuable next commercial action?
-\end{quote}
-
-\section{Possible Research Question}
-
-\begin{quote}
-    Can AI sales agents be modeled as systems that optimize expected revenue per token, and if so, which parts of that optimization are computationally tractable, which are merely approximable, and which remain irreducibly uncertain because they depend on human subjectivity?
+    What is the most valuable next commercial action, given what the agent knows,
+    what it does not know, and what it costs to find out?
 \end{quote}
 
 \end{document}
