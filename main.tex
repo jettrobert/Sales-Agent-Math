@@ -472,6 +472,50 @@ usable session state must fit within that constraint:
 \text{tokens}(s_t) \leq W
 \]
 
+But fitting inside the context window is not the same as being used by the
+model. The usable state is also shaped by attention: the mechanism that
+determines which parts of the available context most influence the next token,
+and therefore the next action.\footnote{Vaswani et al. introduced the
+Transformer's scaled dot-product attention mechanism in ``Attention Is All You
+Need.''}
+
+A simplified attention function can be written as:
+
+\[
+\alpha_i
+=
+\frac{
+\exp(q_t \cdot k_i / \sqrt{d})
+}{
+\sum_j \exp(q_t \cdot k_j / \sqrt{d})
+}
+\]
+
+where:
+
+\begin{itemize}
+    \item \(q_t\) represents the current query or decision context at time \(t\),
+    \item \(k_i\) represents the key for context item \(i\),
+    \item \(d\) is a scaling term based on the dimensionality of the attention
+    representation,
+    \item \(\alpha_i\) is the attention weight assigned to item \(i\).
+\end{itemize}
+
+The agent's effective state is therefore not simply everything inside the
+context window. It is closer to an attention-weighted version of available
+context:
+
+\[
+\tilde{s}_t = \text{Attention}(s_t, q_t)
+\]
+
+where \(\tilde{s}_t\) is the usable state for the current decision. This matters
+because long context can still fail if the relevant information is not attended
+to at the moment of action. Empirical work on long-context models has shown that
+models may underuse information depending on where it appears in the context,
+especially when the relevant information is buried in the middle.\footnote{See
+Liu et al., ``Lost in the Middle: How Language Models Use Long Contexts.''}
+
 As sessions grow, the agent faces a compression problem. It must decide which
 details to preserve, which to summarize, which to retrieve later, and which to
 discard. Poor compression lowers the value of future state because the agent may
