@@ -355,6 +355,99 @@ The economic question becomes:
     expected net value?
 \end{quote}
 
+\section{Strategy, Action, and Model Allocation}
+
+Revenue per token does not increase automatically with model complexity. A more
+capable reasoning model may make better decisions, but if the task is simple,
+bounded, or already specified, the marginal value of that additional reasoning
+may be small.
+
+This suggests a useful distinction between strategy tasks and action tasks.
+
+Strategy tasks decide what should be done. They involve ambiguity, hidden state,
+tradeoffs, downside risk, or commercial judgment. Examples include deciding
+whether an account is worth pursuing, choosing the right message angle, detecting
+brand risk, interpreting conflicting signals, or deciding that the best action is
+to stop.
+
+Action tasks execute something that has already been decided. They are bounded,
+templateable, easy to verify, or close to deterministic. Examples include
+extracting a company name, filling a known template, formatting an email, calling
+an API, classifying title seniority, or writing a routine follow-up from an
+approved strategy.
+
+For action tasks, the goal is often satisficing: use the cheapest model or tool
+that clears the required quality threshold. Let \(\tau\) denote a task and \(m\)
+denote a model. Then:
+
+\[
+m^*
+=
+\arg\min_m C(m, \tau)
+\quad
+\text{subject to}
+\quad
+Q(m, \tau, s_t) \geq q_{\min}
+\]
+
+Read plainly:
+
+\begin{quote}
+    Choose the lowest-cost model \(m\) for task \(\tau\), as long as its quality
+    in the current state \(s_t\) meets the minimum acceptable threshold
+    \(q_{\min}\).
+\end{quote}
+
+For strategy tasks, the goal is closer to optimization. The agent should choose
+the model whose additional reasoning quality increases expected commercial value
+more than it increases cost:
+
+\[
+m^*
+=
+\arg\max_m
+\left(
+\mathbb{E}[\Delta V(s_t) \mid m, \tau]
+-
+C(m, \tau)
+\right)
+\]
+
+where \(\Delta V(s_t)\) is the expected improvement in the value of state or
+future action quality after using model \(m\) on task \(\tau\).
+
+This also gives a simple test for whether an expensive model is justified. Let
+\(m_{\text{high}}\) be a stronger, more expensive model, and let
+\(m_{\text{low}}\) be a cheaper baseline model. The expensive model should be
+used when:
+
+\[
+\mathbb{E}[V \mid m_{\text{high}}, \tau, s_t]
+-
+\mathbb{E}[V \mid m_{\text{low}}, \tau, s_t]
+>
+C(m_{\text{high}}, \tau)
+-
+C(m_{\text{low}}, \tau)
+\]
+
+Plainly:
+
+\begin{quote}
+    A more expensive model is justified only when the expected value of its
+    better reasoning exceeds its additional cost.
+\end{quote}
+
+This distinction is especially important for sales agents. Templated generation,
+field extraction, routine tool calling, and low-risk classification may have
+high revenue per token on cheap models precisely because the task does not need
+deep reasoning. Strategic decisions, exception handling, and high-risk account
+judgment may justify more expensive models because correctness changes the
+commercial outcome.
+
+Complexity is not value. Complexity is worth paying for only when it changes the
+decision.
+
 \section{Discrete Sequences of Action}
 
 Sales agents do not act once. They act over time.
@@ -698,6 +791,13 @@ classes. Cheap models may be sufficient for extraction, scoring, deduplication,
 and low-risk classification. Expensive models may be justified for strategic
 reasoning, nuanced personalization, exception handling, or final approval.
 
+\subsection{Separate Strategy from Action}
+
+Strategy and action should not be priced the same way. Strategic reasoning may
+justify expensive models when it changes the commercial decision. Routine action
+tasks should usually be routed to the cheapest model, tool, or deterministic
+workflow that satisfies the required quality threshold.
+
 \subsection{Track Total Cost, Not Only Model Cost}
 
 A low-cost model can still create high-cost behavior if it sends poor messages,
@@ -739,6 +839,8 @@ Supporting questions include:
     action?
     \item When is it worth spending more inference to reduce uncertainty?
     \item How should agents route tasks across cheap and expensive models?
+    \item Which tasks require strategic optimization, and which can be handled
+    through satisficing on cheaper models or deterministic workflows?
     \item How should session memory, context windows, and compaction affect the
     value of state at time \(t\)?
     \item Which costs belong in the objective function beyond token spend?
