@@ -167,12 +167,18 @@ systems, it should move closer to revenue or contribution margin.
 
 Let \(C(a_t)\) denote the cost of action \(a_t\).
 
-This cost can include token cost, model cost, tool cost, channel cost, and risk:
+This cost can include token cost (input tokens used to read context and output
+tokens used to generate text), model cost (different prices and latency profiles
+for different models), tool cost (paid enrichment, CRM, scraping, or database
+calls), channel cost (the cost of using or degrading access to email, LinkedIn,
+phone, ads, or another distribution channel), and risk (see below):
 
 \[
 C(a_t)
 =
 C_{\text{tokens}}(a_t)
++
+C_{\text{model}}(a_t)
 +
 C_{\text{tools}}(a_t)
 +
