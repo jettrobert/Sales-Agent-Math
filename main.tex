@@ -117,11 +117,17 @@ the agent currently knows, such as:
     \item website visits,
     \item enrichment results,
     \item inferred buyer fit,
-    \item deliverability status.
+    \item deliverability status,
+    \item session memory from previous steps.
 \end{itemize}
 
 The state is observed but incomplete. The agent does not directly know whether
 the prospect has budget, urgency, trust, or current attention.
+
+In agent systems, state also has a session component. The agent's action at time
+\(t\) is informed not only by static CRM fields or enrichment data, but by the
+accumulated context of the session so far: what the agent already tried, what it
+learned, what assumptions it made, and what results came back.
 
 \subsection{Action}
 
@@ -381,6 +387,116 @@ to say, but whether to spend more tokens researching, whether to use a stronger
 model, whether the account is worth contacting, whether more information would
 change the decision, and whether the safest action is to stop.
 
+\section{Session State and Context Windows}
+
+One of the distinctive features of AI agents is that they carry session context
+forward through time. A traditional automation may execute a fixed workflow. An
+agent can accumulate observations, intermediate conclusions, failed attempts,
+tool results, and prior messages inside the session itself.
+
+We can make this explicit by decomposing state:
+
+\[
+s_t = (x_t, h_t, m_t)
+\]
+
+where:
+
+\begin{itemize}[noitemsep]
+    \item \(x_t\) is the current external context, such as CRM data, enrichment
+    data, account signals, and channel status,
+    \item \(h_t\) is the session history, such as previous actions, generated
+    messages, tool calls, observations, and intermediate reasoning,
+    \item \(m_t\) is retrieved long-term memory, such as durable account notes,
+    prior conversations, playbook knowledge, or cross-session learnings.
+\end{itemize}
+
+The value of state may increase over the life of a session because each step can
+add information that improves later decisions. If the agent researches a company
+at time \(1\), detects a buying signal at time \(2\), and observes a prospect's
+reply at time \(3\), then the action at time \(4\) should be better informed than
+the action at time \(1\).
+
+This can be described as:
+
+\[
+V(s_{t+1}) \geq V(s_t)
+\]
+
+when the new information added between \(t\) and \(t+1\) improves the agent's
+ability to choose valuable future actions.
+
+This inequality is not guaranteed. Additional context can also be noisy,
+irrelevant, stale, or misleading. The more precise claim is that session context
+has expected value when it improves action selection more than it increases
+cost:
+
+\[
+\mathbb{E}[V(s_{t+1}) - V(s_t)] > C_{\text{context}}(t)
+\]
+
+where \(C_{\text{context}}(t)\) includes the cost of carrying, reading,
+retrieving, compressing, or reasoning over additional context at time \(t\).
+
+\subsection{Context Windows as Economic Constraints}
+
+A context window is not just a technical limit. It is an economic constraint on
+state. The agent can only condition its next action on information that is
+available in the active context window or retrieved from memory.
+
+Let \(W\) denote the maximum context window size, measured in tokens. Then the
+usable session state must fit within that constraint:
+
+\[
+\text{tokens}(s_t) \leq W
+\]
+
+As sessions grow, the agent faces a compression problem. It must decide which
+details to preserve, which to summarize, which to retrieve later, and which to
+discard. Poor compression lowers the value of future state because the agent may
+forget why it made a decision, repeat work, lose a prospect-specific constraint,
+or act on an outdated assumption.
+
+\subsection{Memory as State Infrastructure}
+
+Memory can be understood as infrastructure for increasing the value of \(s_t\)
+without forcing every prior token to remain in the active context window.
+
+In an ideal system, the agent uses:
+
+\begin{itemize}[noitemsep]
+    \item active context for immediately relevant session details,
+    \item summarized memory for durable conclusions,
+    \item retrieval for account-specific and playbook-specific knowledge,
+    \item compaction for preserving decision-relevant history when the context
+    window becomes too large.
+\end{itemize}
+
+The economic role of memory is to improve expected future action quality:
+
+\[
+\Delta V_{\text{memory}}
+=
+\mathbb{E}[V(s_t \mid m_t)]
+-
+\mathbb{E}[V(s_t \mid \varnothing)]
+-
+C_{\text{memory}}(m_t)
+\]
+
+Plainly:
+
+\begin{quote}
+    Memory is valuable when the improvement in future decisions is greater than
+    the cost of storing, retrieving, and reasoning over that memory.
+\end{quote}
+
+This is one reason AI sales agents are different from simple outbound
+automation. A good agent does not merely execute the next step in a cadence. It
+uses the session as a growing decision surface, where each observation should
+make later actions more precise, less repetitive, and more commercially
+rational.
+
 \section{A Funnel-Based Approximation}
 
 In practice, builders may not be able to estimate closed-won revenue directly.
@@ -522,6 +638,14 @@ reasoning, nuanced personalization, exception handling, or final approval.
 A low-cost model can still create high-cost behavior if it sends poor messages,
 misroutes accounts, damages deliverability, or increases human cleanup work.
 
+\subsection{Treat Memory as Part of the Product}
+
+Session memory, retrieval, and compaction are not implementation details. They
+determine what the agent knows at time \(t\), which determines which actions it
+can rationally choose. Better memory should increase the value of later state,
+but only if it preserves decision-relevant information without overwhelming the
+model with irrelevant context.
+
 \subsection{Measure Downstream Value}
 
 Reply rate is not enough. The system should be evaluated by its effect on the
@@ -550,6 +674,8 @@ Supporting questions include:
     action?
     \item When is it worth spending more inference to reduce uncertainty?
     \item How should agents route tasks across cheap and expensive models?
+    \item How should session memory, context windows, and compaction affect the
+    value of state at time \(t\)?
     \item Which costs belong in the objective function beyond token spend?
     \item How should systems measure downstream value rather than shallow
     activity metrics?
