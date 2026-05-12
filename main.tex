@@ -1,0 +1,322 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+
+\title{From Next-Token Prediction to Next-Best Commercial Action}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Core Question}
+
+Can AI sales agents be modeled as systems that optimize expected revenue per token, and what mathematical frameworks best describe the limits of that optimization?
+
+More informally:
+
+\begin{quote}
+    Is the central problem of AI sales agents not merely generating plausible language, but deciding which information to acquire, which action to take, and when to stop?
+\end{quote}
+
+\section{Sales Agents as Sequential Decision Systems}
+
+Let an AI sales agent take a sequence of actions:
+
+\[
+A = (a_1, a_2, \ldots, a_T)
+\]
+
+where each action may include:
+
+\begin{itemize}[noitemsep]
+    \item researching a prospect,
+    \item choosing a channel,
+    \item generating an email,
+    \item personalizing a message,
+    \item asking a qualification question,
+    \item waiting,
+    \item following up,
+    \item stopping outreach.
+\end{itemize}
+
+At each timestep \(t\), the agent observes a state \(s_t\), chooses an action \(a_t\), and receives feedback that may be immediate, delayed, or unobserved.
+
+The agent's objective is to choose actions that maximize expected commercial value.
+
+\[
+a_t^* = \arg\max_{a_t} \mathbb{E}[R \mid s_t, a_t] - C(a_t)
+\]
+
+where:
+
+\begin{itemize}[noitemsep]
+    \item \(R\) is eventual commercial return,
+    \item \(s_t\) is the current observed sales context,
+    \item \(a_t\) is the next action,
+    \item \(C(a_t)\) is the cost of taking that action.
+\end{itemize}
+
+\section{Revenue Per Token}
+
+A simple version of the agent's objective is:
+
+\[
+\text{Revenue Per Token}
+=
+\frac{\mathbb{E}[R \mid S, A]}{C_{\text{tokens}}(A)}
+\]
+
+A more complete version accounts for non-token costs:
+
+\[
+\text{Net Value}(A)
+=
+\mathbb{E}[R \mid S, A] - C(A)
+\]
+
+where:
+
+\[
+C(A)
+=
+C_{\text{tokens}}
++
+C_{\text{tools}}
++
+C_{\text{channel}}
++
+C_{\text{brand}}
++
+C_{\text{opportunity}}
+\]
+
+The agent should therefore optimize not merely for likely next tokens, but for valuable next actions.
+
+\section{Expected Commercial Value}
+
+A simplified expected value model for a sales action is:
+
+\[
+EV(a_t \mid s_t)
+=
+P(y = 1 \mid s_t, a_t) \cdot LTV
+-
+C(a_t)
+-
+\text{Risk}(a_t)
+\]
+
+where:
+
+\begin{itemize}[noitemsep]
+    \item \(y = 1\) indicates a successful commercial outcome,
+    \item \(LTV\) is the lifetime value or expected contract value,
+    \item \(C(a_t)\) is the direct cost of the action,
+    \item \(\text{Risk}(a_t)\) includes deliverability, unsubscribe, spam, or brand risk.
+\end{itemize}
+
+For a staged funnel, expected revenue may be decomposed as:
+
+\[
+\mathbb{E}[R]
+=
+P(\text{reply})
+\cdot
+P(\text{meeting} \mid \text{reply})
+\cdot
+P(\text{close} \mid \text{meeting})
+\cdot
+ACV
+\]
+
+Thus the net expected value is:
+
+\[
+EV
+=
+P(\text{reply})
+\cdot
+P(\text{meeting} \mid \text{reply})
+\cdot
+P(\text{close} \mid \text{meeting})
+\cdot
+ACV
+-
+C(A)
+\]
+
+\section{The P vs NP Analogy}
+
+The P vs NP analogy arises from the distinction between finding and verifying a successful sales path.
+
+Suppose there exists an optimal sequence of commercial actions:
+
+\[
+A^* = (a_1^*, a_2^*, \ldots, a_T^*)
+\]
+
+After a deal closes, one may be able to verify that a given path contributed to the outcome. However, finding that path in advance is substantially harder.
+
+This suggests the informal analogy:
+
+\begin{quote}
+    Given a sales path, verification may be easier than generation. But efficiently discovering the optimal path before the outcome is observed may be computationally intractable.
+\end{quote}
+
+However, AI sales agents are not literally a P vs NP problem in the formal computational-complexity sense. Sales outcomes are probabilistic, partially observed, non-stationary, and reflexive.
+
+A stronger formulation is:
+
+\begin{quote}
+    AI sales agents resemble partially observable sequential decision systems in which the agent must optimize expected commercial value under uncertainty, sparse feedback, and costly inference.
+\end{quote}
+
+\section{Candidate Mathematical Frameworks}
+
+\subsection{Contextual Multi-Armed Bandits}
+
+A contextual bandit model is appropriate when the agent chooses among competing actions and observes partial reward.
+
+\[
+a_t^* = \arg\max_{a \in \mathcal{A}} \mathbb{E}[r_t \mid x_t, a]
+\]
+
+where:
+
+\begin{itemize}[noitemsep]
+    \item \(x_t\) is the context,
+    \item \(a\) is an available action,
+    \item \(r_t\) is the observed reward.
+\end{itemize}
+
+This framework fits problems such as subject line selection, message angle testing, CTA choice, channel selection, and timing optimization.
+
+\subsection{Partially Observable Markov Decision Processes}
+
+A more expressive model is a partially observable Markov decision process, or POMDP.
+
+The buyer has a hidden state:
+
+\[
+z_t \in \mathcal{Z}
+\]
+
+which may include:
+
+\[
+z_t =
+(\text{awareness}, \text{need}, \text{urgency}, \text{budget}, \text{trust}, \text{authority}, \text{timing}, \text{annoyance})
+\]
+
+The agent cannot observe \(z_t\) directly. Instead, it observes signals:
+
+\[
+o_t \sim P(o_t \mid z_t)
+\]
+
+and maintains a belief distribution:
+
+\[
+b_t(z) = P(z_t = z \mid o_{1:t}, a_{1:t-1})
+\]
+
+The agent chooses the action that maximizes expected future reward:
+
+\[
+a_t^*
+=
+\arg\max_{a_t}
+\mathbb{E}
+\left[
+\sum_{k=t}^{T} \gamma^{k-t} r_k
+\mid
+b_t, a_t
+\right]
+\]
+
+where \(\gamma\) is a discount factor.
+
+\subsection{Value of Information}
+
+Some tokens persuade. Other tokens gather information.
+
+The value of asking a question, performing research, or enriching a record can be modeled as the value of information:
+
+\[
+VOI
+=
+\mathbb{E}[V \mid \text{new information}]
+-
+\mathbb{E}[V \mid \text{current information}]
+-
+C_{\text{info}}
+\]
+
+This captures the idea that a token may be valuable not because it directly converts the buyer, but because it reduces uncertainty about the buyer's state.
+
+\section{Central Tension}
+
+Sales combines objective and subjective components.
+
+Objective components include:
+
+\begin{itemize}[noitemsep]
+    \item inbox placement,
+    \item contact data accuracy,
+    \item company fit,
+    \item title relevance,
+    \item timing signals,
+    \item channel constraints.
+\end{itemize}
+
+Subjective components include:
+
+\begin{itemize}[noitemsep]
+    \item trust,
+    \item relevance,
+    \item emotional resonance,
+    \item perceived urgency,
+    \item prior experience,
+    \item mood and attention.
+\end{itemize}
+
+This creates a mixed optimization problem:
+
+\[
+\text{Sales Outcome}
+=
+f(\text{objective constraints}, \text{subjective interpretation}, \text{agent action}, \epsilon)
+\]
+
+where \(\epsilon\) captures irreducible uncertainty.
+
+\section{Thesis}
+
+AI sales agents should not be evaluated primarily as copy generators. They should be evaluated as inference systems that allocate tokens, actions, and channel touches to maximize expected revenue under uncertainty.
+
+The central mathematical problem is not:
+
+\begin{quote}
+    What is the most plausible next token?
+\end{quote}
+
+but rather:
+
+\begin{quote}
+    What is the most valuable next commercial action?
+\end{quote}
+
+\section{Possible Research Question}
+
+\begin{quote}
+    Can AI sales agents be modeled as systems that optimize expected revenue per token, and if so, which parts of that optimization are computationally tractable, which are merely approximable, and which remain irreducibly uncertain because they depend on human subjectivity?
+\end{quote}
+
+\end{document}
